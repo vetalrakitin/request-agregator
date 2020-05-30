@@ -27,26 +27,33 @@ function get(service, opts = {}) {
 
         const callService = (key) => {
             let promises = [] 
+            let timeout
             
             promises.push(service.get(query[key]));
             
             // Expected that the source has no timeout event and wont reject an error in the case
             if (opts.timeout) {
-                promises.push(new Promise((res,rej) => setTimeout(() => {rej(new Error("timeout"))}, opts.timeout)))
+                promises.push(new Promise((res,rej) => timeout = setTimeout(() => {rej(new Error("timeout"))}, opts.timeout)))
             }
 
             return Promise.race(promises)
                 .then((data) => {
+                    if (timeout) {
+                        clearTimeout(timeout)
+                    }
                     stream.write([key, { data }]);
                 })
                 .catch((err) => {
+                    if (timeout) {
+                        clearTimeout(timeout)
+                    }
                     stream.write([
                         key,
                         {
                             error: resolveErrorResponse(err),
                         },
                     ]);
-                });
+                })
         }
 
         Promise.all(Object.keys(query).map(callService))
