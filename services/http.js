@@ -1,4 +1,4 @@
-function create(agent, baseUrl) {
+function create(agent, baseUrl = '') {
     return {
         get: (url) => {
             return agent
